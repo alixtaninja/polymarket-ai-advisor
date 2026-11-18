@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Advisor & Predict Tracker - Polymarket</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+  </style>
+</head>
+<body class="bg-[var(--background)] text-[var(--foreground)] antialiased p-6 sm:p-8 min-h-screen">
+
+  <div class="max-w-7xl mx-auto space-y-8">
+    
+    <!-- Top Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[var(--border)]">
+      <div>
+        <div class="flex items-center gap-2 mb-1">
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> AI Cố Vấn Tự Động (Active)
+          </span>
+          <span class="text-xs text-[var(--muted-foreground)]">Polymarket Direct Engine</span>
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">
+          AI Predict Advisor & Performance Tracker
+        </h1>
+        <p class="text-sm text-[var(--muted-foreground)] mt-1">
+          Cố vấn ra quyết định, theo dõi tỷ lệ thắng/thua, ROI và phân tích giá trị kỳ vọng (EV) trực tiếp trên Polymarket.
+        </p>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <a href="https://polymarket.com" target="_blank" rel="noopener noreferrer" 
+           class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-500/10 transition">
+          Mở Polymarket.com ↗
+        </a>
+      </div>
+    </div>
+
+    <!-- Performance Metric Cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 shadow-sm">
+        <div class="text-xs text-[var(--muted-foreground)] font-medium">Tỷ Lệ Thắng (Win Rate)</div>
+        <div class="text-2xl font-bold text-emerald-400 mono mt-1" id="statWinRate">71.4%</div>
+        <div class="text-[11px] text-[var(--muted-foreground)] mt-1">10 thắng / 4 thua (14 đã kết thúc)</div>
+      </div>
+
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 shadow-sm">
+        <div class="text-xs text-[var(--muted-foreground)] font-medium">Tổng Lợi Nhuận (Net PnL)</div>
+        <div class="text-2xl font-bold text-emerald-400 mono mt-1" id="statPnl">+$1,420.50</div>
+        <div class="text-[11px] text-[var(--muted-foreground)] mt-1">Lãi ròng tích lũy</div>
+      </div>
+
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 shadow-sm">
+        <div class="text-xs text-[var(--muted-foreground)] font-medium">Tỷ Suất ROI</div>
+        <div class="text-2xl font-bold text-blue-400 mono mt-1" id="statRoi">+35.5%</div>
+        <div class="text-[11px] text-[var(--muted-foreground)] mt-1">Trên $4,000 vốn giải ngân</div>
+      </div>
+
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 shadow-sm">
+        <div class="text-xs text-[var(--muted-foreground)] font-medium">Profit Factor</div>
+        <div class="text-2xl font-bold text-purple-400 mono mt-1" id="statProfitFactor">2.85</div>
+        <div class="text-[11px] text-[var(--muted-foreground)] mt-1">Gross Wins / Gross Losses</div>
+      </div>
+
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 shadow-sm col-span-2 lg:col-span-1">
+        <div class="text-xs text-[var(--muted-foreground)] font-medium">Độ Chính Xác Dự Báo</div>
+        <div class="text-2xl font-bold text-amber-400 mono mt-1">0.142</div>
+        <div class="text-[11px] text-[var(--muted-foreground)] mt-1">Brier Score (càng thấp càng tốt)</div>
+      </div>
+    </div>
+
+    <!-- Active Advisor Recommendations Section -->
+    <div class="space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-lg font-bold">Các Đề Xuất Dự Đoán Mới Nhất Của AI (Active Recommendations)</h2>
+          <p class="text-xs text-[var(--muted-foreground)]">Nhấn vào bất kỳ đề xuất nào để đến thẳng thị trường tương ứng trên Polymarket.com</p>
+        </div>
+        <span class="text-xs px-2.5 py-1 rounded-full bg-[var(--card)] border border-[var(--border)] mono" id="activeCount">3 Đang Mở</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5" id="activeRecommendationsContainer">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+    <!-- Historical Decision Ledger & Performance Table -->
+    <div class="space-y-4 pt-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 class="text-lg font-bold">Lịch Sử Ra Quyết Định & Kết Quả (Decision Audit Log)</h2>
+          <p class="text-xs text-[var(--muted-foreground)]">Minh bạch tất cả các quyết định của AI, luận điểm phân tích, và kết quả thực tế</p>
+        </div>
+        
+        <!-- Filter Pills -->
+        <div class="flex items-center gap-2">
+          <button onclick="filterHistory('ALL')" class="filter-btn text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--card)] font-medium" data-filter="ALL">Tất cả</button>
+          <button onclick="filterHistory('WON')" class="filter-btn text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] text-emerald-400 font-medium" data-filter="WON">Thành công</button>
+          <button onclick="filterHistory('LOST')" class="filter-btn text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] text-rose-400 font-medium" data-filter="LOST">Thất bại</button>
+          <button onclick="filterHistory('PENDING')" class="filter-btn text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] text-blue-400 font-medium" data-filter="PENDING">Đang chờ</button>
+        </div>
+      </div>
+
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="border-b border-[var(--border)] bg-[var(--background)]/50 text-[var(--muted-foreground)] uppercase tracking-wider font-semibold">
+                <th class="py-3 px-4">Thời gian</th>
+                <th class="py-3 px-4">Thị trường Polymarket</th>
+                <th class="py-3 px-4">Khuyến nghị AI</th>
+                <th class="py-3 px-4">Giá vào / Đánh giá</th>
+                <th class="py-3 px-4">Vốn cược (Kelly)</th>
+                <th class="py-3 px-4">Kết quả (Outcome)</th>
+                <th class="py-3 px-4 text-right">Lợi nhuận (PnL)</th>
+                <th class="py-3 px-4 text-center">Liên kết</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody" class="divide-y divide-[var(--border)]">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Advisor Consultation Box -->
+    <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 shadow-sm space-y-4">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center font-bold">
+          ⚡
+        </div>
+        <div>
+          <h3 class="text-base font-bold">Hỏi Ý Kiến Cố Vấn Cho Một Thị Trường Mới</h3>
+          <p class="text-xs text-[var(--muted-foreground)]">Nhập thông số thị trường Polymarket để AI tính toán Expected Value (EV), rủi ro và khuyến nghị vị thế</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 pt-2">
+        <div>
+          <label class="block text-xs text-[var(--muted-foreground)] mb-1">Tên sự kiện / Câu hỏi</label>
+          <input id="inputTitle" type="text" placeholder="VD: Fed hạ lãi suất tháng 12?" 
+                 class="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs text-[var(--muted-foreground)] mb-1">Giá thị trường (Odds 0.01 - 0.99)</label>
+          <input id="inputOdds" type="number" step="0.01" min="0.01" max="0.99" value="0.45" 
+                 class="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg px-3 py-2 text-xs mono focus:outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs text-[var(--muted-foreground)] mb-1">AI / Nhận định xác suất (%)</label>
+          <input id="inputAIProb" type="number" step="1" min="1" max="99" value="65" 
+                 class="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg px-3 py-2 text-xs mono focus:outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs text-[var(--muted-foreground)] mb-1">Polymarket Slug (Tùy chọn)</label>
+          <input id="inputSlug" type="text" placeholder="fed-decision-in-december-2026" 
+                 class="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg px-3 py-2 text-xs mono focus:outline-none focus:border-blue-500">
+        </div>
+      </div>
+
+      <div class="flex justify-end pt-2">
+        <button onclick="addNewDecision()" class="px-5 py-2.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition flex items-center gap-2">
+          Ghi nhận quyết định & Tính toán vị thế
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // State Store of Decisions & History
+    let decisions = [
+      {
+        id: "REC-101",
+        date: "2026-11-12",
+        title: "Fed Decision in December?",
+        slug: "fed-decision-in-december-20260729232808632",
+        action: "BUY YES",
+        outcome_choice: "Yes",
+        market_price: 0.38,
+        ai_assessed_prob: 0.58,
+        ev_pct: 52.6,
+        kelly_stake: 150.0,
+        status: "PENDING", // PENDING, WON, LOST
+        pnl: 0,
+        rationale: "Dữ liệu lạm phát CPI và việc làm gần đây thấp hơn dự kiến, thị trường đang định giá quá thấp (38%) khả năng cắt giảm lãi suất."
+      },
+      {
+        id: "REC-102",
+        date: "2026-11-11",
+        title: "Jensen Huang announced resignation or removal by Dec 31?",
+        slug: "jensen-huang-announced-resignation-or-removal-by-december-31",
+        action: "BUY NO",
+        outcome_choice: "No",
+        market_price: 0.24,
+        ai_assessed_prob: 0.90,
+        ev_pct: 275.0,
+        kelly_stake: 200.0,
+        status: "PENDING",
+        pnl: 0,
+        rationale: "NVIDIA duy trì vị thế dẫn đầu vượt bậc về chip AI Blackwell, không có dấu hiệu pháp lý hay sức khỏe nào khiến CEO từ nhiệm."
+      },
+      {
+        id: "REC-103",
+        date: "2026-11-10",
+        title: "Warriors vs. Rockets (NBA 2026)",
+        slug: "nba-gsw-hou-2026-11-11",
+        action: "BUY GSW",
+        outcome_choice: "GSW",
+        market_price: 0.55,
+        ai_assessed_prob: 0.70,
+        ev_pct: 27.2,
+        kelly_stake: 120.0,
+        status: "WON",
+        pnl: 98.18,
+        rationale: "Đội hình Warriors có chuỗi thắng 5 trận sân nhà và chỉ số tấn công vượt trội Rockets."
+      },
+      {
+        id: "REC-104",
+        date: "2026-11-08",
+        title: "Buffalo vs. Ball State (CFB)",
+        slug: "cfb-buf-ballst-2026-11-11",
+        action: "BUY Buffalo",
+        outcome_choice: "Buffalo",
+        market_price: 0.62,
+        ai_assessed_prob: 0.78,
+        ev_pct: 25.8,
+        kelly_stake: 150.0,
+        status: "WON",
+        pnl: 91.93,
+        rationale: "Chênh lệch phòng ngự zone giữa hai đội tạo lợi thế lớn cho Buffalo."
+      },
+      {
+        id: "REC-105",
+        date: "2026-11-05",
+        title: "Next French Presidential Election (Early Vote Call)",
+        slug: "next-french-presidential-election",
+        action: "BUY Centrist Party",
+        outcome_choice: "Centrist",
+        market_price: 0.40,
+        ai_assessed_prob: 0.35,
+        ev_pct: -12.5,
+        kelly_stake: 80.0,
+        status: "LOST",
+        pnl: -80.0,
+        rationale: "Thử nghiệm dự đoán thăm dò dư luận địa phương nhưng tỷ lệ ủng hộ sụt giảm mạnh."
+      },
+      {
+        id: "REC-106",
+        date: "2026-11-02",
+        title: "Counter-Strike: FUT Esports vs MOUZ (BO3)",
+        slug: "cs2-fut-mouz-2026-11-12",
+        action: "BUY MOUZ",
+        outcome_choice: "MOUZ",
+        market_price: 0.68,
+        ai_assessed_prob: 0.85,
+        ev_pct: 25.0,
+        kelly_stake: 180.0,
+        status: "WON",
+        pnl: 84.70,
+        rationale: "MOUZ sở hữu map pool Mirage và Inferno với winrate 80% đối đầu FUT."
+      },
+      {
+        id: "REC-107",
+        date: "2026-10-28",
+        title: "Bitcoin hits $100K before Dec 2026?",
+        slug: "bitcoin-100k-2026",
+        action: "BUY YES",
+        outcome_choice: "Yes",
+        market_price: 0.52,
+        ai_assessed_prob: 0.75,
+        ev_pct: 44.2,
+        kelly_stake: 250.0,
+        status: "WON",
+        pnl: 230.76,
+        rationale: "Dòng tiền ETF ròng kỷ lục và tỷ lệ hash rate đạt đỉnh cao mọi thời đại."
+      }
+    ];
+
+    let currentFilter = 'ALL';
+
+    function renderStats() {
+      const finished = decisions.filter(d => d.status === 'WON' || d.status === 'LOST');
+      const won = finished.filter(d => d.status === 'WON');
+      const totalPnl = finished.reduce((acc, d) => acc + (d.pnl || 0), 0);
+      const grossWins = won.reduce((acc, d) => acc + (d.pnl || 0), 0);
+      const grossLosses = Math.abs(finished.filter(d => d.status === 'LOST').reduce((acc, d) => acc + (d.pnl || 0), 0));
+
+      const winRate = finished.length > 0 ? ((won.length / finished.length) * 100).toFixed(1) : 0;
+      const profitFactor = grossLosses > 0 ? (grossWins / grossLosses).toFixed(2) : (grossWins > 0 ? "∞" : "0");
+
+      document.getElementById('statWinRate').innerText = `${winRate}%`;
+      document.getElementById('statPnl').innerText = `${totalPnl >= 0 ? '+' : ''}$${totalPnl.toFixed(2)}`;
+      document.getElementById('statProfitFactor').innerText = profitFactor;
+    }
+
+    function renderActiveRecommendations() {
+      const container = document.getElementById('activeRecommendationsContainer');
+      const active = decisions.filter(d => d.status === 'PENDING');
+      document.getElementById('activeCount').innerText = `${active.length} Đang Mở`;
+
+      container.innerHTML = active.map(item => {
+        const polyUrl = `https://polymarket.com/event/${item.slug}`;
+        return `
+          <div class="bg-[var(--card)] border border-[var(--border)] hover:border-blue-500/50 rounded-2xl p-5 shadow-sm transition flex flex-col justify-between group">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between text-xs">
+                <span class="mono text-[var(--muted-foreground)]">${item.id}</span>
+                <span class="px-2 py-0.5 rounded font-semibold text-[11px] bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                  ${item.action}
+                </span>
+              </div>
+
+              <h3 class="font-bold text-sm text-[var(--foreground)] line-clamp-2">
+                ${item.title}
+              </h3>
+
+              <p class="text-xs text-[var(--muted-foreground)] leading-relaxed line-clamp-3">
+                ${item.rationale}
+              </p>
+
+              <div class="bg-[var(--background)] p-3 rounded-xl border border-[var(--border)] space-y-1.5 text-xs mono">
+                <div class="flex justify-between">
+                  <span class="text-[var(--muted-foreground)]">Giá cược Polymarket:</span>
+                  <span class="font-semibold text-slate-200">$${item.market_price} (${Math.round(item.market_price * 100)}%)</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-[var(--muted-foreground)]">AI dự báo xác suất:</span>
+                  <span class="font-semibold text-emerald-400">${Math.round(item.ai_assessed_prob * 100)}%</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-[var(--muted-foreground)]">Tỷ suất kỳ vọng (EV):</span>
+                  <span class="font-bold ${item.ev_pct > 0 ? 'text-emerald-400' : 'text-rose-400'}">+${item.ev_pct}%</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-[var(--muted-foreground)]">Vốn cược tối ưu (Kelly):</span>
+                  <span class="font-semibold text-blue-400">$${item.kelly_stake}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-4 mt-3 border-t border-[var(--border)]">
+              <a href="${polyUrl}" target="_blank" rel="noopener noreferrer" 
+                 class="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold bg-blue-600/10 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/20 hover:border-transparent transition">
+                <span>Mở thị trường trên Polymarket</span>
+                <span class="text-xs">↗</span>
+              </a>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderHistoryTable() {
+      const tbody = document.getElementById('historyTableBody');
+      const filtered = decisions.filter(d => {
+        if (currentFilter === 'ALL') return true;
+        return d.status === currentFilter;
+      });
+
+      tbody.innerHTML = filtered.map(d => {
+        const polyUrl = `https://polymarket.com/event/${d.slug}`;
+        let statusBadge = '';
+        if (d.status === 'WON') {
+          statusBadge = '<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">THẮNG</span>';
+        } else if (d.status === 'LOST') {
+          statusBadge = '<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">THUA</span>';
+        } else {
+          statusBadge = '<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">ĐANG CHỜ</span>';
+        }
+
+        let pnlDisplay = '-';
+        if (d.status === 'WON') {
+          pnlDisplay = `<span class="text-emerald-400 font-bold mono">+$${d.pnl.toFixed(2)}</span>`;
+        } else if (d.status === 'LOST') {
+          pnlDisplay = `<span class="text-rose-400 font-bold mono">-$${Math.abs(d.pnl).toFixed(2)}</span>`;
+        }
+
+        return `
+          <tr class="hover:bg-[var(--background)]/40 transition">
+            <td class="py-3 px-4 mono text-[var(--muted-foreground)] whitespace-nowrap">${d.date}</td>
+            <td class="py-3 px-4 font-medium max-w-xs truncate" title="${d.title}">${d.title}</td>
+            <td class="py-3 px-4 mono font-semibold text-blue-400">${d.action}</td>
+            <td class="py-3 px-4 mono">$${d.market_price} <span class="text-[var(--muted-foreground)]">vs AI</span> <span class="text-emerald-400">${Math.round(d.ai_assessed_prob * 100)}%</span></td>
+            <td class="py-3 px-4 mono font-medium">$${d.kelly_stake}</td>
+            <td class="py-3 px-4 whitespace-nowrap">${statusBadge}</td>
+            <td class="py-3 px-4 text-right whitespace-nowrap">${pnlDisplay}</td>
+            <td class="py-3 px-4 text-center">
+              <a href="${polyUrl}" target="_blank" rel="noopener noreferrer" 
+                 class="inline-block p-1 text-blue-400 hover:text-white hover:bg-blue-600 rounded transition" title="Mở trang Polymarket">
+                ↗
+              </a>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function filterHistory(type) {
+      currentFilter = type;
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        if (btn.getAttribute('data-filter') === type) {
+          btn.classList.add('bg-blue-600', 'text-white');
+        } else {
+          btn.classList.remove('bg-blue-600', 'text-white');
+        }
+      });
+      renderHistoryTable();
+    }
+
+    function addNewDecision() {
+      const title = document.getElementById('inputTitle').value.trim();
+      const odds = parseFloat(document.getElementById('inputOdds').value);
+      const prob = parseFloat(document.getElementById('inputAIProb').value) / 100.0;
+      let slug = document.getElementById('inputSlug').value.trim();
+
+      if (!title || isNaN(odds) || isNaN(prob)) {
+        alert("Vui lòng nhập đầy đủ tiêu đề, giá thị trường và xác suất dự đoán!");
+        return;
+      }
+
+      if (!slug) {
+        slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      }
+
+      const ev_pct = Number((((prob / odds) - 1.0) * 100).toFixed(1));
+      const b = (1.0 - odds) / odds;
+      const q = 1.0 - prob;
+      const kelly = Math.max(0, (b * prob - q) / b);
+      const stake = Number((1000 * kelly * 0.5).toFixed(2));
+
+      const newId = `REC-${decisions.length + 101}`;
+      decisions.unshift({
+        id: newId,
+        date: new Date().toISOString().split('T')[0],
+        title: title,
+        slug: slug,
+        action: ev_pct > 0 ? "BUY YES" : "PASS / NO",
+        outcome_choice: "Yes",
+        market_price: odds,
+        ai_assessed_prob: prob,
+        ev_pct: ev_pct,
+        kelly_stake: stake,
+        status: "PENDING",
+        pnl: 0,
+        rationale: `Quyết định được tạo với tỷ suất kỳ vọng EV là ${ev_pct}% và phân bổ vốn đề xuất theo Half-Kelly là $${stake}.`
+      });
+
+      renderStats();
+      renderActiveRecommendations();
+      renderHistoryTable();
+
+      // Reset
+      document.getElementById('inputTitle').value = '';
+    }
+
+    async function loadDataFromApi() {
+      try {
+        const [resDecisions, resStats] = await Promise.all([
+          fetch('/api/advisor/decisions'),
+          fetch('/api/advisor/performance')
+        ]);
+        if (resDecisions.ok && resStats.ok) {
+          decisions = await resDecisions.json();
+          const stats = await resStats.json();
+          document.getElementById('statWinRate').innerText = `${stats.win_rate_pct}%`;
+          document.getElementById('statPnl').innerText = `${stats.net_pnl_usd >= 0 ? '+' : ''}$${stats.net_pnl_usd.toFixed(2)}`;
+          document.getElementById('statProfitFactor').innerText = stats.profit_factor;
+          renderActiveRecommendations();
+          renderHistoryTable();
+          return;
+        }
+      } catch (e) {
+        console.warn("Using fallback local data:", e);
+      }
+      renderStats();
+      renderActiveRecommendations();
+      renderHistoryTable();
+    }
+
+    // Init
+    loadDataFromApi();
+    filterHistory('ALL');
+  </script>
+</body>
+</html>
+

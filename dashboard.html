@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Polymarket Prediction & Trading Hub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .mono { font-family: 'JetBrains+Mono', monospace; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-slate-900/60 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20 font-black text-xl">
+          P
+        </div>
+        <div>
+          <h1 class="text-lg font-bold bg-gradient-to-r from-blue-400 to-indigo-300 bg-clip-text text-transparent">
+            Polymarket API & Prediction Hub
+          </h1>
+          <p class="text-xs text-slate-400">Trực tiếp kết nối Polymarket Gamma, CLOB V2 & Data API</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="/docs" target="_blank" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 flex items-center gap-1.5 transition">
+          <i class="fa-solid fa-code"></i> API Docs (Swagger)
+        </a>
+        <div class="flex items-center gap-2 text-xs bg-emerald-950/80 text-emerald-400 border border-emerald-800/50 px-2.5 py-1 rounded-full">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Live Connected
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+    <!-- Top Bar: Search & Quick Status -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="md:col-span-2 relative">
+        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400"></i>
+        <input id="searchInput" type="text" placeholder="Tìm kiếm thị trường (VD: Bitcoin, Fed, Election, AI...)" 
+               class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 text-slate-200">
+      </div>
+      <button onclick="fetchTrendingEvents()" class="bg-blue-600 hover:bg-blue-500 font-semibold px-4 py-2.5 rounded-xl text-sm transition flex items-center justify-center gap-2">
+        <i class="fa-solid fa-arrows-rotate"></i> Làm mới thị trường HOT
+      </button>
+    </div>
+
+    <!-- Layout: 2 Columns (Markets List vs Detail & Predictor) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- Left: Market Listings (5 Cols) -->
+      <div class="lg:col-span-5 space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400">
+            <i class="fa-solid fa-fire text-amber-500 mr-1.5"></i> Thị trường dẫn đầu
+          </h2>
+          <span id="marketCount" class="text-xs text-slate-500 font-mono">Đang tải...</span>
+        </div>
+
+        <div id="eventsList" class="space-y-3 max-h-[750px] overflow-y-auto pr-1">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Right: Detailed Intelligence & Prediction Actions (7 Cols) -->
+      <div class="lg:col-span-7 space-y-6">
+        
+        <!-- Detailed Card -->
+        <div id="detailSection" class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+          <div class="text-center py-12 text-slate-500">
+            <i class="fa-solid fa-chart-line text-4xl mb-3 text-slate-600"></i>
+            <p>Chọn một thị trường bên trái để xem phân tích chi tiết, tỷ lệ cược, sổ lệnh và công cụ dự đoán.</p>
+          </div>
+        </div>
+
+        <!-- Predict Tool: Kelly & Expected Value Calculator -->
+        <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
+              <i class="fa-solid fa-calculator"></i>
+            </div>
+            <div>
+              <h3 class="text-base font-bold text-slate-200">Công Cụ Đánh Giá Dự Đoán (Expected Value & Kelly)</h3>
+              <p class="text-xs text-slate-400">Tính toán xem việc tham gia dự đoán có lợi nhuận kỳ vọng dương hay không</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Giá thị trường (0.01 - 0.99)</label>
+              <input id="calcMarketPrice" type="number" step="0.01" min="0.01" max="0.99" value="0.50" 
+                     class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 mono">
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Dự đoán của bạn (%)</label>
+              <input id="calcUserProb" type="number" step="1" min="1" max="99" value="65" 
+                     class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 mono">
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Tổng vốn (USD)</label>
+              <input id="calcBankroll" type="number" step="100" min="10" value="1000" 
+                     class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 mono">
+            </div>
+          </div>
+
+          <button onclick="calculateEV()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-sm font-semibold py-2.5 rounded-xl transition">
+            Tính toán tỷ lệ kỳ vọng & Kích thước vị thế tối ưu
+          </button>
+
+          <div id="evResult" class="hidden bg-slate-950/80 border border-slate-800 rounded-xl p-4 text-xs space-y-2 mono">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <!-- Order Formulation (EIP-712 Builder) -->
+        <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                <i class="fa-solid fa-file-signature"></i>
+              </div>
+              <div>
+                <h3 class="text-base font-bold text-slate-200">Chuẩn Bị Lệnh Giao Dịch (EIP-712 Order Builder)</h3>
+                <p class="text-xs text-slate-400">Sinh cấu trúc lệnh ký mật mã chuẩn Polymarket CLOB V2</p>
+              </div>
+            </div>
+            <span class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded border border-slate-700">Polygon L2</span>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Hành động</label>
+              <select id="orderSide" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2 py-2 text-xs text-slate-200">
+                <option value="BUY">MUA (BUY)</option>
+                <option value="SELL">BÁN (SELL)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Giá giới hạn ($)</label>
+              <input id="orderPrice" type="number" step="0.01" min="0.01" max="0.99" value="0.55" 
+                     class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2 py-2 text-xs text-slate-200 mono">
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Số lượng shares</label>
+              <input id="orderSize" type="number" step="10" min="1" value="100" 
+                     class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2 py-2 text-xs text-slate-200 mono">
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Loại lệnh</label>
+              <select id="orderType" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2 py-2 text-xs text-slate-200">
+                <option value="GTC">GTC (Hủy thủ công)</option>
+                <option value="FOK">FOK (Khớp hết hoặc hủy)</option>
+                <option value="FAK">FAK (Khớp 1 phần)</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Token ID</label>
+            <input id="orderTokenId" type="text" placeholder="Chọn outcome ở trên hoặc dán clobTokenId..." 
+                   class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-300 mono">
+          </div>
+
+          <button onclick="buildOrderPayload()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold py-2.5 rounded-xl transition">
+            Tạo Payload Lệnh Chuẩn EIP-712
+          </button>
+
+          <pre id="orderPayloadResult" class="hidden bg-slate-950 p-4 rounded-xl text-xs mono text-emerald-400 overflow-x-auto max-h-48 border border-slate-800"></pre>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <script>
+    let eventsData = [];
+    let selectedEvent = null;
+
+    async function fetchTrendingEvents() {
+      const container = document.getElementById('eventsList');
+      container.innerHTML = '<div class="text-xs text-slate-400 p-4 text-center">Đang tải dữ liệu trực tiếp từ Polymarket...</div>';
+      try {
+        const res = await fetch('/api/events?limit=25');
+        const data = await res.json();
+        eventsData = data;
+        document.getElementById('marketCount').innerText = `${data.length} sự kiện`;
+        renderEvents(data);
+        if (data.length > 0 && !selectedEvent) {
+          selectEvent(data[0].id);
+        }
+      } catch (err) {
+        container.innerHTML = `<div class="text-xs text-red-400 p-4">Lỗi tải dữ liệu: ${err.message}</div>`;
+      }
+    }
+
+    function renderEvents(events) {
+      const container = document.getElementById('eventsList');
+      container.innerHTML = '';
+      events.forEach(ev => {
+        const el = document.createElement('div');
+        el.className = `p-4 rounded-xl border border-slate-800/80 bg-slate-900/60 hover:bg-slate-850 hover:border-slate-700 cursor-pointer transition flex flex-col gap-2.5 ${selectedEvent && selectedEvent.id === ev.id ? 'ring-2 ring-blue-500 bg-slate-800/80' : ''}`;
+        el.onclick = () => selectEvent(ev.id);
+
+        const vol = ev.volume24hr ? Number(ev.volume24hr).toLocaleString('en-US', {maximumFractionDigits: 0}) : '0';
+        const comments = ev.commentCount || 0;
+
+        // Extract primary outcomes
+        let oddsBadges = '';
+        if (ev.markets && ev.markets.length > 0) {
+          const m = ev.markets[0];
+          let prices = [];
+          try {
+            prices = typeof m.outcomePrices === 'string' ? JSON.parse(m.outcomePrices) : (m.outcomePrices || []);
+          } catch(e){}
+          if (prices.length >= 2) {
+            const yesP = Math.round(parseFloat(prices[0]) * 100);
+            const noP = Math.round(parseFloat(prices[1]) * 100);
+            oddsBadges = `
+              <div class="flex items-center gap-2 mt-1">
+                <span class="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800/50">Yes ${yesP}%</span>
+                <span class="text-xs font-semibold px-2 py-0.5 rounded bg-rose-950 text-rose-400 border border-rose-800/50">No ${noP}%</span>
+              </div>
+            `;
+          }
+        }
+
+        el.innerHTML = `
+          <div class="flex items-start justify-between gap-3">
+            <h3 class="text-sm font-semibold text-slate-200 line-clamp-2">${ev.title}</h3>
+          </div>
+          ${oddsBadges}
+          <div class="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-800/50">
+            <span><i class="fa-solid fa-chart-simple mr-1 text-blue-400"></i> $${vol} (24h)</span>
+            <span><i class="fa-regular fa-comments mr-1 text-slate-400"></i> ${comments} bình luận</span>
+          </div>
+        `;
+        container.appendChild(el);
+      });
+    }
+
+    async function selectEvent(eventId) {
+      const detail = document.getElementById('detailSection');
+      detail.innerHTML = '<div class="text-center py-12 text-slate-400"><i class="fa-solid fa-spinner fa-spin text-3xl mb-3"></i><p>Đang phân tích dữ liệu tổng hợp & sổ lệnh...</p></div>';
+
+      try {
+        const res = await fetch(`/api/predict/summary/${eventId}`);
+        const summary = await res.json();
+        selectedEvent = summary;
+
+        // Re-render list selection indicator
+        renderEvents(eventsData);
+
+        renderDetail(summary);
+      } catch (err) {
+        detail.innerHTML = `<div class="text-red-400 text-sm">Lỗi phân tích: ${err.message}</div>`;
+      }
+    }
+
+    function renderDetail(s) {
+      const detail = document.getElementById('detailSection');
+      
+      let marketsHtml = '';
+      (s.markets || []).forEach(m => {
+        let outcomeButtons = '';
+        (m.outcomes || []).forEach(o => {
+          outcomeButtons += `
+            <div class="flex items-center justify-between bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+              <span class="font-medium text-slate-300">${o.outcome}</span>
+              <div class="flex items-center gap-3">
+                <span class="mono text-sm font-bold ${o.outcome.toLowerCase() === 'yes' ? 'text-emerald-400' : 'text-slate-300'}">${o.implied_probability_pct}% ($${o.price})</span>
+                <button onclick="setTokenForOrder('${o.token_id}', ${o.price})" class="bg-blue-600/30 hover:bg-blue-600 text-blue-300 hover:text-white px-2 py-1 rounded text-xs transition">
+                  Chọn đặt lệnh
+                </button>
+              </div>
+            </div>
+          `;
+        });
+
+        marketsHtml += `
+          <div class="space-y-2 bg-slate-900 p-4 rounded-xl border border-slate-800">
+            <div class="text-xs font-semibold text-slate-300">${m.question}</div>
+            <div class="grid grid-cols-1 gap-2">${outcomeButtons}</div>
+            ${m.orderbook && m.orderbook.top5_bid_liquidity_usd ? `
+              <div class="text-[11px] text-slate-400 flex justify-between pt-1">
+                <span>Thanh khoản Mua (Top 5): <b class="text-slate-200 mono">$${m.orderbook.top5_bid_liquidity_usd}</b></span>
+                <span>Thanh khoản Bán (Top 5): <b class="text-slate-200 mono">$${m.orderbook.top5_ask_liquidity_usd}</b></span>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      });
+
+      let commentsHtml = '';
+      const sampleComments = s.community_sentiment?.recent_comments_sample || [];
+      if (sampleComments.length > 0) {
+        commentsHtml = `
+          <div class="space-y-2 pt-2">
+            <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Cộng đồng thảo luận (${s.community_sentiment.comment_count})</h4>
+            <div class="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+              ${sampleComments.map(c => `<div class="text-xs bg-slate-950/60 p-2 rounded border border-slate-800/60 text-slate-300">"${c}"</div>`).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      detail.innerHTML = `
+        <div class="space-y-4">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-[11px] bg-blue-950 text-blue-400 border border-blue-800/60 px-2 py-0.5 rounded">ID: ${s.event_id}</span>
+              ${s.end_date ? `<span class="text-[11px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded">Đáo hạn: ${s.end_date.split('T')[0]}</span>` : ''}
+            </div>
+            <h2 class="text-lg font-bold text-slate-100">${s.title}</h2>
+          </div>
+
+          <div class="bg-slate-950/80 p-3.5 rounded-xl border border-slate-800 text-xs text-slate-300 leading-relaxed max-h-36 overflow-y-auto">
+            <span class="font-semibold text-slate-400 block mb-1">Quy tắc phân xử (Resolution Rules):</span>
+            ${s.resolution_rules || 'Không có mô tả quy tắc đặc biệt.'}
+          </div>
+
+          <div class="space-y-2">
+            <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Thị trường & Giá Odds trực tiếp</h4>
+            ${marketsHtml}
+          </div>
+
+          ${commentsHtml}
+        </div>
+      `;
+    }
+
+    function setTokenForOrder(tokenId, price) {
+      if (tokenId) {
+        document.getElementById('orderTokenId').value = tokenId;
+        document.getElementById('orderPrice').value = price;
+        document.getElementById('calcMarketPrice').value = price;
+      }
+    }
+
+    async function calculateEV() {
+      const price = parseFloat(document.getElementById('calcMarketPrice').value);
+      const prob = parseFloat(document.getElementById('calcUserProb').value) / 100.0;
+      const bankroll = parseFloat(document.getElementById('calcBankroll').value);
+
+      const res = await fetch('/api/predict/calculate-ev', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          market_price: price,
+          estimated_probability: prob,
+          bankroll: bankroll
+        })
+      });
+      const data = await res.json();
+      const div = document.getElementById('evResult');
+      div.classList.remove('hidden');
+
+      const isPositive = data.expected_value_pct > 0;
+
+      div.innerHTML = `
+        <div class="flex justify-between items-center pb-2 border-b border-slate-800">
+          <span class="text-slate-400">Khuyến nghị hành động:</span>
+          <span class="font-bold text-sm ${isPositive ? 'text-emerald-400' : 'text-rose-400'}">${data.recommended_action}</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2 pt-1 text-slate-300">
+          <div>Tỷ suất kỳ vọng (EV): <b class="${isPositive ? 'text-emerald-400' : 'text-rose-400'}">${data.expected_value_pct}%</b></div>
+          <div>Thị trường định giá: <b>${data.market_implied_prob_pct}%</b></div>
+          <div>Tỷ lệ Kelly tối ưu: <b>${(data.kelly_fraction * 100).toFixed(2)}%</b></div>
+          <div>Vốn cược an toàn đề xuất: <b class="text-emerald-400">$${data.recommended_stake_usd}</b></div>
+        </div>
+      `;
+    }
+
+    async function buildOrderPayload() {
+      const tokenId = document.getElementById('orderTokenId').value.trim();
+      const side = document.getElementById('orderSide').value;
+      const price = parseFloat(document.getElementById('orderPrice').value);
+      const size = parseFloat(document.getElementById('orderSize').value);
+      const orderType = document.getElementById('orderType').value;
+
+      if (!tokenId) {
+        alert("Vui lòng chọn hoặc nhập Token ID!");
+        return;
+      }
+
+      const res = await fetch('/api/predict/prepare-order', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          token_id: tokenId,
+          side: side,
+          price: price,
+          size: size,
+          order_type: orderType
+        })
+      });
+      const data = await res.json();
+      const pre = document.getElementById('orderPayloadResult');
+      pre.classList.remove('hidden');
+      pre.innerText = JSON.stringify(data, null, 2);
+    }
+
+    // Search filter
+    document.getElementById('searchInput').addEventListener('keyup', (e) => {
+      const term = e.target.value.toLowerCase();
+      if (!term) {
+        renderEvents(eventsData);
+        return;
+      }
+      const filtered = eventsData.filter(ev => (ev.title || '').toLowerCase().includes(term));
+      renderEvents(filtered);
+    });
+
+    // Init
+    fetchTrendingEvents();
+  </script>
+</body>
+</html>
